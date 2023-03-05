@@ -59,23 +59,29 @@ export default class SoapClient {
     data: Record<string, unknown>,
     moreOptions?: SoapOptions
   ): Promise<Record<string, unknown>> {
-    const options = {
-      ...this.options,
-      ...moreOptions,
+    const httpHeaders = {
+      "Content-Type": "text/xml; charset=utf-8",
+      ...(this.options.targetNamespace && {
+        SOAPAction: `${this.options.targetNamespace}${method}`,
+      }),
+      ...this.options.httpHeaders,
+      ...moreOptions?.httpHeaders,
     };
     console.log(this.buildBody(method, data, moreOptions));
 
     const response = await this.httpClient.post(this.endpoint, {
-      headers: options.httpHeaders,
+      headers: httpHeaders,
       body: this.buildBody(method, data, moreOptions),
     });
 
     const body = parseXML(response.data).Envelope?.Body;
     if (!body) {
-      throw new Error("Invalid SOAP response");
+      throw new Error(
+        ["Invalid SOAP response", response.data].filter(Boolean).join(": ")
+      );
     }
     if (body.Fault) {
-      throw new Error("SOAP Fault");
+      throw new Error(`SOAP Fault: ${JSON.stringify(body.Fault)}`);
     }
     return body;
   }
