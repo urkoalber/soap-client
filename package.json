@@ -1,5 +1,6 @@
 {
   "name": "soap-client",
+  "version": "0.0.2",
   "packageManager": "yarn@3.3.1",
   "scripts": {
     "build": "tsc",
