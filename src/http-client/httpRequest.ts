@@ -1,10 +1,13 @@
 import http from "node:http";
+import https from "node:https";
+
 import { RequestOptions, Response } from "./types";
 
 export default function httpRequest(url: string, options: RequestOptions) {
   return new Promise<Response>((resolve, reject) => {
     const endpoint = new URL(url);
-    const req = http.request(
+    const lib = endpoint.protocol === "https:" ? https : http;
+    const req = lib.request(
       {
         hostname: endpoint.hostname,
         path: endpoint.pathname,
@@ -34,13 +37,15 @@ export default function httpRequest(url: string, options: RequestOptions) {
     );
 
     if (options.method === "POST" && options.body) {
+      let body = String(options.body);
       if (typeof options.body === "object") {
         req.setHeader("Content-Type", "application/json");
-        req.write(JSON.stringify(options.body));
-      } else {
-        req.write(options.body);
+        body = JSON.stringify(options.body);
       }
+      req.setHeader("Content-Length", Buffer.byteLength(body));
+      req.write(options.body);
     }
     req.end();
+    console.log(req.getHeaders());
   });
 }
